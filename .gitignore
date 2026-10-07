@@ -12,3 +12,4 @@ wheels/
 # Secrets and generated images
 .env
 crops_monthly/
+_site/

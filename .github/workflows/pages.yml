@@ -1,0 +1,51 @@
+name: Build and deploy viewer
+
+on:
+  schedule:
+    - cron: "0 6 2 * *"  # 06:00 UTC on the 2nd of every month, once the previous month is complete
+  workflow_dispatch:  # "Run workflow" button in the Actions tab
+  push:
+    branches: [master]
+    paths: ["*.py", "map_online_info.kmz", "pyproject.toml", "uv.lock"]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Read points from the online map
+        run: uv run kmz_to_csv.py
+
+      - name: Download Sentinel-2 crops
+        run: uv run point_crops.py --output-dir _site/crops_monthly
+        env:
+          CDSE_USERNAME: ${{ secrets.CDSE_USERNAME }}
+          CDSE_PASSWORD: ${{ secrets.CDSE_PASSWORD }}
+
+      - name: Build viewer
+        run: uv run build_viewer.py --crops-dir _site/crops_monthly --output-html _site/index.html
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
