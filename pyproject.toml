@@ -1,0 +1,11 @@
+[project]
+name = "dcmaps"
+version = "0.1.0"
+description = "Sentinel-2 image time series for the data centres of a KMZ map"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pyproj>=3.8.0",
+    "python-dotenv>=1.2.3",
+    "requests>=2.34.2",
+]
