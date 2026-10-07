@@ -13,3 +13,7 @@ wheels/
 .env
 crops_monthly/
 _site/
+
+# tmp files
+.tmp
+output
