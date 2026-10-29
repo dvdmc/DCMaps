@@ -49,14 +49,13 @@ TEMPLATE = """<!DOCTYPE html>
   dd { margin: 0; font-variant-numeric: tabular-nums; }
   .frame { position: relative; width: 100%; aspect-ratio: 1; background: var(--card); border-radius: 16px; overflow: hidden; }
   .frame img { width: 100%; height: 100%; display: block; object-fit: cover; }
-  .controls { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+  .frame .month { position: absolute; top: 10px; left: 10px; padding: 2px 10px; border-radius: 8px;
+    background: rgba(2, 48, 71, .8); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .controls { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
   .controls input[type=range] { flex: 1; accent-color: var(--accent); }
   button { font: inherit; font-weight: 500; background: var(--card); color: var(--text); border: 1px solid var(--border);
     border-radius: 8px; padding: 4px 10px; cursor: pointer; min-width: 36px; }
   button:hover { background: var(--accent); color: var(--bg); border-color: var(--accent); }
-  .when { display: flex; justify-content: space-between; margin-top: 8px; font-variant-numeric: tabular-nums; }
-  .when strong { font-size: 16px; }
-  .when span { color: var(--muted); }
   .legend, .leaflet-control-layers { background: var(--card); color: var(--text); padding: 8px 10px;
     border-radius: 12px; border: 1px solid var(--border); line-height: 1.8; }
   .leaflet-container { background: var(--card); font-family: inherit; }
@@ -148,14 +147,13 @@ function render() {
     <dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("")}</dl>`;
   if (!p.frames.length) return;  // Only points under construction or in operation have images
   panel.innerHTML += `
-    <div class="frame"><img id="img" alt=""></div>
     <div class="controls">
       <button id="prev" title="Anterior (←)">‹</button>
       <input type="range" id="slider" min="0" max="${Math.max(p.frames.length - 1, 0)}" value="${index}">
       <button id="next" title="Siguiente (→)">›</button>
       <button id="play" title="Reproducir">▶</button>
     </div>
-    <div class="when"><strong id="month"></strong><span id="date"></span></div>`;
+    <div class="frame"><img id="img" alt=""><span class="month" id="month"></span></div>`;
   document.getElementById("slider").addEventListener("input", e => { index = +e.target.value; show(); });
   document.getElementById("prev").addEventListener("click", () => step(-1));
   document.getElementById("next").addEventListener("click", () => step(1));
@@ -170,7 +168,6 @@ function show() {
   img.alt = `${label(current)} ${f.date}`;
   document.getElementById("slider").value = index;
   document.getElementById("month").textContent = monthLabel(f.month);
-  document.getElementById("date").textContent = `imagen del ${f.date}`;
 }
 
 function step(d) {
