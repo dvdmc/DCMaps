@@ -9,11 +9,7 @@ wheels/
 # Virtual environments
 .venv
 
-# Secrets and generated images
+# Secrets and generated files (output/ locally, _site/ in the GitHub Action)
 .env
-crops_monthly/
+output/
 _site/
-
-# tmp files
-.tmp
-output

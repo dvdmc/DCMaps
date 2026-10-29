@@ -186,16 +186,11 @@ document.addEventListener("keydown", e => {
 """
 
 
-def build_viewer(points_csv="points.csv", crops_dir="crops_monthly", output_html="output/viewer.html"):
+def build_viewer(points_csv="points.csv", crops_dir="output/crops_monthly", output_html="output/viewer.html"):
     """Write an HTML page with a map of the points; clicking one shows its crops with a month slider.
 
     Image paths are relative to the HTML file, so keep it next to crops_dir.
     """
-    # Crear directorio output si no existe
-    output_dir = os.path.dirname(output_html)
-    if output_dir and not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    
     base = os.path.dirname(os.path.abspath(output_html))
     data = []
     for point in read_points(points_csv):
@@ -206,6 +201,7 @@ def build_viewer(points_csv="points.csv", crops_dir="crops_monthly", output_html
             frames.append({"month": day[:7], "date": day, "src": src})
         data.append({**point, "frames": frames})
     html = TEMPLATE.replace("__DATA__", json.dumps(data, ensure_ascii=False)).replace("__COLORS__", json.dumps(STATUS_COLORS, ensure_ascii=False))
+    os.makedirs(base, exist_ok=True)
     with open(output_html, "w", encoding="utf-8") as f:
         f.write(html)
     print(f"Saved {output_html} with {len(data)} points and {sum(len(p['frames']) for p in data)} images")
@@ -214,6 +210,6 @@ def build_viewer(points_csv="points.csv", crops_dir="crops_monthly", output_html
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=build_viewer.__doc__.splitlines()[0])
     parser.add_argument("--points-csv", default="points.csv")
-    parser.add_argument("--crops-dir", default="crops_monthly")
+    parser.add_argument("--crops-dir", default="output/crops_monthly")
     parser.add_argument("--output-html", default="output/viewer.html")
     build_viewer(**vars(parser.parse_args()))

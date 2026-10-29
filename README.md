@@ -17,11 +17,11 @@ CDSE_PASSWORD=...
 
 ```
 uv run kmz_to_csv.py      # map_online_info.kmz -> points.csv
-uv run point_crops.py     # points.csv -> crops_monthly/<point>/<YYYY-MM-DD>.png
-uv run build_viewer.py    # points.csv + crops_monthly/ -> viewer.html
+uv run point_crops.py     # points.csv -> output/crops_monthly/<point>/<YYYY-MM-DD>.png
+uv run build_viewer.py    # points.csv + output/crops_monthly/ -> output/viewer.html
 ```
 
-Open `viewer.html` in a browser. It must stay next to `crops_monthly/`, and the background map needs internet.
+Open `output/viewer.html` in a browser. Everything generated goes into `output/` (git-ignored), which can be copied or shared as a whole; the background map needs internet.
 
 ## Scripts
 
@@ -40,7 +40,7 @@ Open `viewer.html` in a browser. It must stay next to `crops_monthly/`, and the 
 | `--start` / `--end` | `2024-01-01` / today | Date range |
 | `--per` | `month` | `year`, `month` or `all` (every acquisition) |
 | `--max-cloud-cover` | `10` | Periods whose least cloudy image is cloudier than this (%) are left out |
-| `--points-csv` / `--output-dir` | `points.csv` / `crops_monthly` | Input and output |
+| `--points-csv` / `--output-dir` | `points.csv` / `output/crops_monthly` | Input and output |
 
 ## Notes
 

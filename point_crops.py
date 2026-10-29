@@ -128,7 +128,7 @@ def download_crop(bbox, epsg, when, resolution, token, path):
 
 def download_point_crops(
     points_csv="points.csv",
-    output_dir="./crops_monthly",
+    output_dir="output/crops_monthly",
     size=2000,
     resolution=10,
     start="2024-01-01",
@@ -163,7 +163,7 @@ def download_point_crops(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=download_point_crops.__doc__.splitlines()[0])
     parser.add_argument("--points-csv", default="points.csv")
-    parser.add_argument("--output-dir", default="./crops_monthly")
+    parser.add_argument("--output-dir", default="output/crops_monthly")
     parser.add_argument("--size", type=float, default=2000, help="crop side in metres")
     parser.add_argument("--resolution", type=float, default=10, help="metres per pixel")
     parser.add_argument("--start", default="2024-01-01")
