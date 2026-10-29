@@ -7,10 +7,18 @@ from datetime import date, datetime, timezone
 import requests
 from dotenv import load_dotenv
 from pyproj import Transformer
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 AUTH_URL = "https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token"
 PROCESS_URL = "https://sh.dataspace.copernicus.eu/api/v1/process"
 CATALOG_URL = "https://sh.dataspace.copernicus.eu/api/v1/catalog/1.0.0/search"
+
+# Retry temporary server errors and rate limits (waiting 2, 4, 8, ... seconds) instead of failing the whole run
+session = requests.Session()
+session.mount("https://", HTTPAdapter(max_retries=Retry(
+    total=5, backoff_factor=2, status_forcelist=[429, 500, 502, 503, 504], allowed_methods=None,
+)))
 
 EVALSCRIPT = """
 //VERSION=3
@@ -26,7 +34,7 @@ function evaluatePixel(s) {
 def get_token():
     # Credentials come from CDSE_USERNAME and CDSE_PASSWORD in .env
     load_dotenv()
-    response = requests.post(AUTH_URL, data={
+    response = session.post(AUTH_URL, data={
         "client_id": "cdse-public",
         "grant_type": "password",
         "username": os.environ["CDSE_USERNAME"],
@@ -64,7 +72,7 @@ def search_acquisitions(lon, lat, start, end, token):
     }
     acquisitions = []
     while True:
-        response = requests.post(CATALOG_URL, json=body, headers={"Authorization": f"Bearer {token}"})
+        response = session.post(CATALOG_URL, json=body, headers={"Authorization": f"Bearer {token}"})
         response.raise_for_status()
         result = response.json()
         for feature in result["features"]:
@@ -112,7 +120,7 @@ def download_crop(bbox, epsg, when, resolution, token, path):
         },
         "evalscript": EVALSCRIPT,
     }
-    response = requests.post(PROCESS_URL, json=body, headers={"Authorization": f"Bearer {token}"})
+    response = session.post(PROCESS_URL, json=body, headers={"Authorization": f"Bearer {token}"})
     response.raise_for_status()
     with open(path, "wb") as f:
         f.write(response.content)
