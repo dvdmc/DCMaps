@@ -18,18 +18,18 @@ TEMPLATE = """<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Centros de datos Aragón</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
+  /* Colours and font of nocentrosdedatosaragon.org */
   :root {
-    --bg: #f6f6f4; --panel: #ffffff; --text: #1d1d1b; --muted: #6b6b66; --border: #e2e2dd; --accent: #c0392b;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg: #161615; --panel: #1f1f1d; --text: #ecebe6; --muted: #9c9b94; --border: #34342f; --accent: #e5604f; }
+    --bg: #023047; --panel: #023047; --card: #1f3640; --text: #ffb703; --muted: #8ecae6;
+    --border: rgba(142, 202, 230, .25); --accent: #fb8500;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
-    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    font: 15px/1.5 "Roboto", system-ui, sans-serif; }
   .layout { display: flex; height: 100%; }
   #map { flex: 1; min-width: 0; }
   aside { width: 440px; max-width: 100%; background: var(--panel); border-left: 1px solid var(--border);
@@ -39,7 +39,7 @@ TEMPLATE = """<!DOCTYPE html>
     #map { flex: none; height: 45vh; }
     aside { width: 100%; border-left: none; border-top: 1px solid var(--border); padding: 16px; flex: 1; }
   }
-  h1 { font-size: 20px; margin: 0 0 4px; }
+  h1 { font-size: 26px; font-weight: 700; margin: 0 0 6px; }
   .sub { color: var(--muted); margin: 0 0 16px; }
   .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 2px 10px;
     border-radius: 999px; border: 1px solid var(--border); }
@@ -47,21 +47,19 @@ TEMPLATE = """<!DOCTYPE html>
   dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 16px 0; }
   dt { color: var(--muted); }
   dd { margin: 0; font-variant-numeric: tabular-nums; }
-  .frame { position: relative; width: 100%; aspect-ratio: 1; background: var(--border); border-radius: 6px; overflow: hidden; }
+  .frame { position: relative; width: 100%; aspect-ratio: 1; background: var(--card); border-radius: 16px; overflow: hidden; }
   .frame img { width: 100%; height: 100%; display: block; object-fit: cover; }
-  .frame .empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); }
-  .frame [hidden] { display: none; }
   .controls { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
   .controls input[type=range] { flex: 1; accent-color: var(--accent); }
-  button { font: inherit; background: var(--bg); color: var(--text); border: 1px solid var(--border);
-    border-radius: 6px; padding: 4px 10px; cursor: pointer; min-width: 36px; }
-  button:hover { border-color: var(--muted); }
+  button { font: inherit; font-weight: 500; background: var(--card); color: var(--text); border: 1px solid var(--border);
+    border-radius: 8px; padding: 4px 10px; cursor: pointer; min-width: 36px; }
+  button:hover { background: var(--accent); color: var(--bg); border-color: var(--accent); }
   .when { display: flex; justify-content: space-between; margin-top: 8px; font-variant-numeric: tabular-nums; }
   .when strong { font-size: 16px; }
   .when span { color: var(--muted); }
-  .note { color: var(--muted); font-size: 12px; margin-top: 12px; }
-  .legend { background: var(--panel); color: var(--text); padding: 8px 10px; border-radius: 6px;
-    border: 1px solid var(--border); line-height: 1.8; }
+  .legend, .leaflet-control-layers { background: var(--card); color: var(--text); padding: 8px 10px;
+    border-radius: 12px; border: 1px solid var(--border); line-height: 1.8; }
+  .leaflet-container { background: var(--card); font-family: inherit; }
   .legend div { display: flex; align-items: center; gap: 6px; }
   .placeholder { color: var(--muted); margin-top: 40px; text-align: center; }
 </style>
@@ -69,24 +67,30 @@ TEMPLATE = """<!DOCTYPE html>
 <body>
 <div class="layout">
   <div id="map"></div>
-  <aside id="panel"><p class="placeholder">Haz clic en un punto del mapa para ver sus imágenes Sentinel-2.</p></aside>
+  <aside id="panel"><p class="placeholder">Haz clic en un punto del mapa para ver su información e imágenes satelitales</p></aside>
 </div>
 <script>
 const DATA = __DATA__;
 const COLORS = __COLORS__;
 const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
-const map = L.map("map").setView([40.3, -3.7], 6);  // Spain
+const map = L.map("map").fitBounds(DATA.map(p => [p.lat, p.lon]), {padding: [40, 40]});  // Zoom to the points (Aragón)
 // OSM's tile servers block pages opened from file:// (no Referer) and CARTO needs an API key; Esri needs neither
 const basemaps = {
-  "Mapa": L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
-    maxZoom: 19, attribution: "Tiles &copy; Esri, HERE, Garmin, OpenStreetMap contributors"
-  }),
-  "Satélite": L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
-    maxZoom: 19, attribution: "Tiles &copy; Esri, Maxar, Earthstar Geographics"
-  }),
+  "Mapa": L.layerGroup([
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}", {
+      maxZoom: 16, attribution: "Tiles &copy; Esri, HERE, Garmin, OpenStreetMap contributors"
+    }),
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}", {maxZoom: 16}),
+  ]),
+  "Satélite": L.layerGroup([
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+      maxZoom: 19, attribution: "Tiles &copy; Esri, Maxar, Earthstar Geographics"
+    }),
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", {maxZoom: 19}),
+  ]),
 };
-basemaps["Mapa"].addTo(map);
+basemaps["Satélite"].addTo(map);
 L.control.layers(basemaps, null, {position: "topright"}).addTo(map);
 
 const legend = L.control({position: "bottomleft"});
@@ -102,12 +106,19 @@ const panel = document.getElementById("panel");
 let current = null, index = 0, timer = null, selectedMarker = null;
 
 function color(p) { return COLORS[p.status] || "#ffffff"; }
+// Shown names are municipality + number (HUE2 -> "Huesca 2"); points without a municipality
+// take it from another point with the same code prefix (ZAR2 y ZAR3 -> "Zaragoza 2 y 3")
+const TOWNS = Object.fromEntries(DATA.filter(p => p.municipality).map(p => [p.name.match(/^[A-Za-z]+/)[0], p.municipality]));
+function label(p) {
+  const town = p.municipality || TOWNS[p.name.match(/^[A-Za-z]+/)[0]];
+  return town ? `${town} ${p.name.replace(/[A-Za-z]+(?=[0-9])/g, "")}` : p.name;
+}
 function esc(s) { return String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c])); }
 function monthLabel(m) { const [y, mo] = m.split("-"); return `${MONTHS[+mo - 1]} ${y}`; }
 
 DATA.forEach(p => {
   const marker = L.circleMarker([p.lat, p.lon], {radius: 7, color: "#000", weight: 1, fillColor: color(p), fillOpacity: 0.95})
-    .addTo(map).bindTooltip(p.name);
+    .addTo(map).bindTooltip(label(p));
   marker.on("click", () => select(p, marker));
 });
 
@@ -132,19 +143,19 @@ function render() {
     ["Lat, lon", `${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}`], ["Descripción", p.description]
   ].filter(([, v]) => v !== "" && v != null);
   panel.innerHTML = `
-    <h1>${esc(p.name)}</h1>
+    <h1>${esc(label(p))}</h1>
     <p class="sub"><span class="pill"><span class="dot" style="background:${color(p)}"></span>${esc(p.status || "Sin estado")}</span></p>
-    <dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
-    <div class="frame"><img id="img" alt=""><div class="empty" id="empty" hidden>Sin imágenes</div></div>
+    <dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("")}</dl>`;
+  if (!p.frames.length) return;  // Only points under construction or in operation have images
+  panel.innerHTML += `
+    <div class="frame"><img id="img" alt=""></div>
     <div class="controls">
       <button id="prev" title="Anterior (←)">‹</button>
       <input type="range" id="slider" min="0" max="${Math.max(p.frames.length - 1, 0)}" value="${index}">
       <button id="next" title="Siguiente (→)">›</button>
       <button id="play" title="Reproducir">▶</button>
     </div>
-    <div class="when"><strong id="month"></strong><span id="date"></span></div>
-    <p class="note">Sentinel-2 L2A, color verdadero, centrada en el punto.
-      Se muestra la adquisición menos nublada de cada mes.</p>`;
+    <div class="when"><strong id="month"></strong><span id="date"></span></div>`;
   document.getElementById("slider").addEventListener("input", e => { index = +e.target.value; show(); });
   document.getElementById("prev").addEventListener("click", () => step(-1));
   document.getElementById("next").addEventListener("click", () => step(1));
@@ -155,11 +166,8 @@ function render() {
 function show() {
   const f = current.frames[index];
   const img = document.getElementById("img");
-  document.getElementById("empty").hidden = !!f;
-  img.hidden = !f;
-  if (!f) return;
   img.src = f.src;
-  img.alt = `${current.name} ${f.date}`;
+  img.alt = `${label(current)} ${f.date}`;
   document.getElementById("slider").value = index;
   document.getElementById("month").textContent = monthLabel(f.month);
   document.getElementById("date").textContent = `imagen del ${f.date}`;

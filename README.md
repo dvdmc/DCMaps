@@ -40,6 +40,7 @@ Open `output/viewer.html` in a browser. Everything generated goes into `output/`
 | `--start` / `--end` | `2024-01-01` / today | Date range |
 | `--per` | `month` | `year`, `month` or `all` (every acquisition) |
 | `--max-cloud-cover` | `10` | Periods whose least cloudy image is cloudier than this (%) are left out |
+| `--statuses` | `En operación` `En construcción` | Only points with these statuses get images; the others are shown in the viewer without them |
 | `--points-csv` / `--output-dir` | `points.csv` / `output/crops_monthly` | Input and output |
 
 ## Notes

@@ -135,6 +135,7 @@ def download_point_crops(
     end=None,
     per="month",
     max_cloud_cover=10.0,
+    statuses=("En operación", "En construcción"),
 ):
     """Download Sentinel-2 L2A true colour PNG crops centred on each point of a CSV.
 
@@ -145,10 +146,13 @@ def download_point_crops(
     start, end: date range as "YYYY-MM-DD"; end defaults to now
     per: "year", "month" or "all" — one image per period (the least cloudy), or every acquisition
     max_cloud_cover: leave out periods whose least cloudy image has more cloud cover than this (0-100)
+    statuses: only download crops for points with one of these statuses
     """
     start = datetime.fromisoformat(start).replace(tzinfo=timezone.utc)
     end = datetime.fromisoformat(end).replace(tzinfo=timezone.utc) if end else datetime.now(timezone.utc)
     for point in read_points(points_csv):
+        if point.get("status") not in statuses:
+            continue
         token = get_token()  # Fresh token per point, as tokens expire after ~30 minutes
         folder = os.path.join(output_dir, folder_name(point["name"]))
         os.makedirs(folder, exist_ok=True)
@@ -170,4 +174,6 @@ if __name__ == "__main__":
     parser.add_argument("--end", default=None)
     parser.add_argument("--per", choices=["year", "month", "all"], default="month")
     parser.add_argument("--max-cloud-cover", type=float, default=10.0)
+    parser.add_argument("--statuses", nargs="+", default=["En operación", "En construcción"],
+                        help="only download crops for points with these statuses")
     download_point_crops(**vars(parser.parse_args()))
